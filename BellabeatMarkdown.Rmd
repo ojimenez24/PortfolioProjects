@@ -1,0 +1,228 @@
+---
+title: "Bellabeat"
+output: html_document
+date: "2023-08-21"
+---
+
+**Install and load needed packages**
+
+```{r}
+library(tidyverse)
+library(here)
+library(skimr)
+library(janitor)
+library(lubridate)
+```
+
+**Import datasets**
+
+```{r}
+calories <- read.csv("C:/Users/ojime/Desktop/Datasets/Fitabase Data 4.12.16-5.12.16/hourlyCalories_merged.csv")
+intensities <- read.csv("C:/Users/ojime/Desktop/Datasets/Fitabase Data 4.12.16-5.12.16/hourlyIntensities_merged.csv")
+steps <- read.csv("C:/Users/ojime/Desktop/Datasets/Fitabase Data 4.12.16-5.12.16/hourlySteps_merged.csv")
+sleep <- read.csv("C:/Users/ojime/Desktop/Datasets/Fitabase Data 4.12.16-5.12.16/sleepDay_merged.csv")
+weight <-read.csv("C:/Users/ojime/Desktop/Datasets/Fitabase Data 4.12.16-5.12.16/weightLogInfo_merged.csv")
+activities <-read.csv("C:/Users/ojime/Desktop/Datasets/Fitabase Data 4.12.16-5.12.16/dailyActivity_merged.csv")
+```
+
+**Cleaning**
+
+lets take a glimpse at the each 5 datasets we will be using to make sure data types are correct
+
+```{r}
+glimpse(calories)
+glimpse(intensities)
+glimpse(sleep)
+glimpse(steps)
+glimpse(weight)
+```
+
+from a glimpse we can see that the 'ActivityHour' column datetype is 'chr', lets change it to datetime format and also make a new column to separate the time of the day from the date.
+
+
+calories
+```{r}
+calories$ActivityHour=as.POSIXct(calories$ActivityHour, format="%m/%d/%Y %I:%M:%S %p", tz=Sys.timezone())
+calories$time <- format(calories$ActivityHour, format = "%H:%M:%S")
+calories$date <- format(calories$ActivityHour, format = "%m/%d/%y")
+```
+
+intensities
+```{r}
+intensities$ActivityHour=as.POSIXct(intensities$ActivityHour, format="%m/%d/%Y %I:%M:%S %p", tz=Sys.timezone())
+intensities$time <- format(intensities$ActivityHour, format = "%H:%M:%S")
+intensities$date <- format(intensities$ActivityHour, format = "%m/%d/%y")  
+```
+
+steps
+```{r}
+steps$ActivityHour=as.POSIXct(steps$ActivityHour, format="%m/%d/%Y %I:%M:%S %p", tz=Sys.timezone())
+steps$time <- format(steps$ActivityHour, format = "%H:%M:%S")
+steps$date <- format(steps$ActivityHour, format = "%m/%d/%y")  
+
+```
+
+sleep
+```{r}
+sleep$SleepDay=as.POSIXct(sleep$SleepDay, format="%m/%d/%Y %I:%M:%S %p", tz=Sys.timezone())
+sleep$date <- format(sleep$SleepDay, format = "%m/%d/%y")
+```
+
+Now, lets check for missing values
+```{r}
+sum(is.na(calories))
+sum(is.na(intensities))
+sum(is.na(steps))
+sum(is.na(weight))
+sum(is.na(sleep))
+```
+there are no missing values except on the 'weight' dataset, lets check from which column(s) where these missing values come from
+
+```{r}
+sapply(weight, function(x) which(is.na(x)))
+```
+as we can see, they come from the 'Fat' column only, so the data still useful for our purposes. 
+Now lets check if the 30 participants are represented in all of the datasets.
+
+```{r}
+n_distinct(calories$Id)
+n_distinct(intensities$Id)
+n_distinct(sleep$Id)
+n_distinct(weight$Id)
+n_distinct(steps$Id)
+```
+
+as we can see, most of the datasets contain 33 participants except for 'sleep' which is only 24 and 'weigh with only 8. This findings make the 'weight' dataset unusable because of sampling bias. 
+
+To finish with the cleaning lets clean all the datasets to make sure that there are only  numbers, letters and special characters used for name separation, dates, times. etc. for all the names in all the datasets
+
+clean_names(calories)
+clean_names(intensities)
+clean_names(sleep)
+clean_names(steps)
+
+**Now we can analyze the data**.
+
+From what we can tell, a good way to analyze the data is to use 'calories' as the dependent variable for 'steps' and 
+'intensities'. 
+
+Lets merge the datasets needed to make them easier to analyze
+
+```{r}
+steps_cal <- merge(steps, calories, by=c ('Id', 'date','time'))
+
+steps_cal <- steps_cal %>%
+  select(-ActivityHour.y,-ActivityHour.x)
+
+inten_cal <- merge(intensities, calories, by=c ('Id', 'date','time'))
+
+inten_cal <- inten_cal %>%
+  select(-ActivityHour.y,-ActivityHour.x)
+```
+
+since this analysis is focused on hourly statistics, lets create a new column inside the 'sleep' dataset to record data in hours instead of minutes.
+
+```{r}
+sleep$sleep_hours <- round(sleep$TotalTimeInBed/60,1)
+```
+
+
+Now lets look at the statistical properties of every dataset we will be working
+
+```{r}
+calories %>%
+  select(Calories) %>%
+  summary()
+
+sleep %>%
+  select(TotalSleepRecords, sleep_hours) %>%
+  summary()
+
+steps_cal %>%
+  select(StepTotal) %>%
+  summary()
+
+inten_cal %>%
+  select(TotalIntensity,AverageIntensity) %>%
+  summary()
+```
+
+**From the summaries we found that:**
+
+* The people in this dataset normally sleep between of 7 to 8 hours
+
+* People in this do not walk as much as they should be since their average steps per hour are 320
+  and based on universal data 1 hour of walking is around 5000 to 6000 steps.
+
+* Based on the calories people represented in this analysis burn 97 calories every hour. However this includes both    non-exercising and exercising calorie burning. 
+
+Lets cleate a new dataset to display only calorie values over 55 (which is the max number of calories burn in a idle state)
+
+```{r}
+active_cal <- calories %>%
+  group_by(Calories) %>%
+  filter(Calories>55)
+
+active_cal %>%
+  select(Calories) %>%
+  summary()
+```
+* As we can see, there is not a lot of difference in the results so this means that the people represented here are    not as active as they should be.
+
+Now it is time for visuals
+
+```{r}
+ggplot(data=calories, aes(x=time, y=Calories)) + geom_histogram(stat = "identity", fill='darkgreen') +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title="Calories per hour")
+```
+
+* Based on this visualization the people in this study burn more calories from 8:00 am to 8:00 pm with a specially     high rate from 5:00 pm to 8:00 pm
+
+```{r}
+ggplot(data=steps_cal, aes(x=StepTotal, y=Calories)) + 
+  geom_point() + geom_smooth() + labs(title="Total Steps vs. Calories")
+```
+
+* Based on the visual we can see that walking more means more calories burned as expected. But also, as we saw in the   summary, not a lot of people are walking for a whole hour since nonstop walking is around 5000 or 6000 steps per     hour.
+
+* By looking at the graph there are also some people burning over 500 calories with minimal walking. This implies      that they may be conbining different kinds of exercises when exercising.
+
+```{r}
+ggplot(data=inten_cal, aes(x=TotalIntensity, y=Calories)) + 
+  geom_point() + geom_smooth() + labs(title="Intensities vs. Calories")
+```
+
+* Based on the graph we can see that calories burning do increase with exerciser intensity, and also that there is a   significant increase rate at higher (150 and over) intensities.
+
+```{r}
+activity_level <-activities[,c('VeryActiveMinutes','FairlyActiveMinutes',
+                                'LightlyActiveMinutes','SedentaryMinutes')] 
+                           
+activity_levels <- activity_level %>% 
+  pivot_longer(cols = VeryActiveMinutes:SedentaryMinutes,
+               names_to="Level",values_to="Value")
+
+
+AL_Sums <- activity_levels %>% 
+  group_by(Level) %>% 
+  summarize(Minutes=sum(Value))
+
+ggplot(AL_Sums,aes(x=Level,y=Minutes))+geom_col(fill="steelblue")
+```
+
+* Based on this activity intensity chart we can see that most of the participants are sedentary user types.
+
+**Results and recommendations:** 
+
+* There is a clear correlation the more the intense the activity is and the higher number of burned calories           regardless of time spent. 
+
+Users could be educated about this in some way when acquiring the product.
+
+* The data also shows that combining different excersises such as walking and working out can have more effective      results in calorie burning
+
+Offering digital courses of a few excersise combinations could lead to better results for the users
+
+* Lastly, data suggest that most poeple use these devices during readditional work hours (8-7) with a peak increase    in the last three hours 
+
+Focusing on this group of consumers in future decisions could beneftit both the main consumer and the company.
