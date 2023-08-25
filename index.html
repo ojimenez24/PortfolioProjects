@@ -455,7 +455,7 @@ sleep$date &lt;- format(sleep$SleepDay, format = &quot;%m/%d/%y&quot;)</code></p
 <pre><code>## [1] 65</code></pre>
 <pre class="r"><code>sum(is.na(sleep))</code></pre>
 <pre><code>## [1] 0</code></pre>
-<p>there are no missing values except on the ‘weight’ dataset, lets
+<p> There are no missing values except on the ‘weight’ dataset, lets
 check from which column(s) where these missing values come from</p>
 <pre class="r"><code>sapply(weight, function(x) which(is.na(x)))</code></pre>
 <pre><code>## $Id
@@ -483,8 +483,8 @@ check from which column(s) where these missing values come from</p>
 ## 
 ## $LogId
 ## integer(0)</code></pre>
-<p>as we can see, they come from the ‘Fat’ column only, so the data
-still useful for our purposes. Now lets check if the 30 participants are
+<p> As we can see, they come from the ‘Fat’ column only, so the data
+still useful for our purposes. Now let's check if the 30 participants are
 represented in all of the datasets.</p>
 <pre class="r"><code>n_distinct(calories$Id)</code></pre>
 <pre><code>## [1] 33</code></pre>
@@ -496,19 +496,19 @@ represented in all of the datasets.</p>
 <pre><code>## [1] 8</code></pre>
 <pre class="r"><code>n_distinct(steps$Id)</code></pre>
 <pre><code>## [1] 33</code></pre>
-<p>as we can see, most of the datasets contain 33 participants except
-for ‘sleep’ which is only 24 and ‘weigh with only 8. This findings make
-the ’weight’ dataset unusable because of sampling bias.</p>
-<p>To finish with the cleaning lets clean all the datasets to make sure
-that there are only numbers, letters and special characters used for
-name separation, dates, times. etc. for all the names in all the
+<p> As we can see, most of the datasets contain 33 participants except
+for ‘sleep’ which is only 24 and ‘weigh with only 8. These findings make
+The’weight’ dataset is unusable because of sampling bias.</p>
+<p>To finish with the cleaning, let's clean all the datasets to make sure
+that there are only numbers, letters, and special characters used for
+name separation, dates, and times. etc. for all the names in all the
 datasets</p>
 <p>clean_names(calories) clean_names(intensities) clean_names(sleep)
 clean_names(steps)</p>
 <p><strong>Now we can analyze the data</strong>.</p>
 <p>From what we can tell, a good way to analyze the data is to use
 ‘calories’ as the dependent variable for ‘steps’ and ‘intensities’.</p>
-<p>Lets merge the datasets needed to make them easier to analyze</p>
+<p> Let's merge the datasets needed to make them easier to analyze</p>
 <pre class="r"><code>steps_cal &lt;- merge(steps, calories, by=c (&#39;Id&#39;, &#39;date&#39;,&#39;time&#39;))
 
 steps_cal &lt;- steps_cal %&gt;%
@@ -518,11 +518,11 @@ inten_cal &lt;- merge(intensities, calories, by=c (&#39;Id&#39;, &#39;date&#39;,
 
 inten_cal &lt;- inten_cal %&gt;%
   select(-ActivityHour.y,-ActivityHour.x)</code></pre>
-<p>since this analysis is focused on hourly statistics, lets create a
+<p> Since this analysis is focused on hourly statistics, let's create a
 new column inside the ‘sleep’ dataset to record data in hours instead of
 minutes.</p>
 <pre class="r"><code>sleep$sleep_hours &lt;- round(sleep$TotalTimeInBed/60,1)</code></pre>
-<p>Now lets look at the statistical properties of every dataset we will
+<p>Now let's look at the statistical properties of every dataset we will
 be working</p>
 <pre class="r"><code>calories %&gt;%
   select(Calories) %&gt;%
