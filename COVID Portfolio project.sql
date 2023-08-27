@@ -10,23 +10,23 @@ Select Location, date, total_cases, new_cases, total_deaths,  population
 From PortfolioProject..CovidDeaths
 order by 1,2
 
---Looking at Total Cases vs Total Deaths
--- Shows likelihood of dying if you contract covid in your country
+--Looking at Total Cases vs. Total Deaths
+-- Shows the likelihood of dying if you contract COVID in your country
 
 Select Location, date, total_cases,total_deaths, (total_deaths/total_cases)*100 as DeathPercentage
 From PortfolioProject..CovidDeaths
 Where location like '%states%'
 order by 1,2
 
--- Looking at Total Caes vs Population
--- Shows what percentage of population got Covid
+-- Looking at Total Caes vs. Population
+-- Shows what percentage of the population got Covid
 
 Select Location, date,population, total_cases, (total_cases/population)*100 as DeathPercentage
 From PortfolioProject..CovidDeaths
 --Where location like '%states%'
 order by 1,2
 
--- Looking at countries with highest infection rete compared to populastion
+-- Looking at countries with the highest infection rates compared to the population
 
 Select continent,Population, MAX(total_cases) as HighestInfectionCount, MAX((total_cases/population))*100 as
 	PercentPopulationInfected
@@ -45,7 +45,7 @@ Where continent is not null
 Group by continent
 order by TotalDeathCount desc
 
--- Lets look at death count by continent
+-- Let's look at the death count by continent
 
 Select continent, MAX(cast(total_deaths as int)) as TotalDeathCount
 From PortfolioProject..CovidDeaths
@@ -72,7 +72,7 @@ where continent is not null
 --Group by date
 order by 1,2
 
---Looking at Total population vs Vaccinations 
+--Looking at Total population vs. Vaccinations 
 
 -- USE CTE
 
@@ -122,7 +122,7 @@ where dea.continent is not null
 Select *, (RollingPeopleVaccinated/population)*100
 From #PercentPopulationVaccinated
 
--- Creating view to store data for later visualizations
+-- Creating a view to store data for later visualizations
 
 Create View PercentPopulationVaccinated as
 Select dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
